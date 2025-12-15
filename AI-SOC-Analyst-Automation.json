@@ -1,0 +1,222 @@
+{
+  "name": "AI-SOC-Analyst-Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "splunk-alert",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        16,
+        0
+      ],
+      "id": "09f0a5a8-483c-49d8-9c1c-d71372e16950",
+      "name": "Webhook",
+      "webhookId": "YOUR_WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Log Olayı: {{ $json.body.result.message }}\nŞüpheli IP: {{ $json.body.result.src_ip }}",
+        "options": {
+          "systemMessage": "Sen uzman bir SOC Analistisin. Splunk logunu ve VirusTotal verilerini analiz et.\nSaldırı türünü (MITRE ID ile) belirle ve çözüm önerileri sun.\nRaporu Türkçe olarak, detaylı ve Markdown formatında (başlıklar, maddeler kullanarak) hazırla."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "a44c6d00-6c40-40eb-8ba6-4947e0d5f347",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        80,
+        208
+      ],
+      "id": "8a4f05e3-3836-4732-8535-ce87d51ea495",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_GOOGLE_CREDENTIAL_ID",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Kullanıcı şüpheli bir IP adresi verirse bu aracı kullanarak o IP'nin zararlı olup olmadığını tarat. Girdi olarak sadece IP adresini al.",
+        "url": "=https://www.virustotal.com/api/v3/ip_addresses/{{ $fromAI(\"ip\") }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        368,
+        208
+      ],
+      "id": "8c81e25c-aed6-41b4-a206-99b6ab23c735",
+      "name": "virus_total_scan",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_VT_CREDENTIAL_ID",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "SENIN_MAIL_ADRESIN@gmail.com",
+        "toEmail": "SENIN_MAIL_ADRESIN@gmail.com",
+        "subject": "🚨 SOC Alarmı: Şüpheli IP Tespiti",
+        "emailFormat": "text",
+        "text": "={{ $json.output }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        960,
+        0
+      ],
+      "id": "f9110639-8fcf-439c-be52-18f1a77ef715",
+      "name": "Send email",
+      "webhookId": "c343774f-3a6c-4310-a29b-475eea7085c8",
+      "credentials": {
+        "smtp": {
+          "id": "YOUR_SMTP_CREDENTIAL_ID",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=GÖREVİN: Aşağıdaki siber güvenlik analizini, verdiğim \"Düz Metin Şablonu\"na göre yeniden düzenle.\n\nKURALLAR:\n1. HTML veya Markdown YOK. Sadece düz metin.\n2. Yazım Kurallarına Uy: Cümlelere MUTLAKA Büyük Harfle başla.\n3. TARİH HESAPLAMA (ÖNEMLİ):\n   - Sana verdiğim \"HAM SAAT\" verisine matematiksel olarak 3 EKLE (TR Saati için).\n   - Örnek: Eğer saat 16 ise, rapora 19 yaz. Eğer saat 09 ise 12 yaz.\n   - Dakikayı olduğu gibi kullan.\n\nVERİLER:\n- GÜN/AY/YIL: {{ $('Webhook').item.json.body.result.date_mday }}.{{ $('Webhook').item.json.body.result.date_month }}.{{ $('Webhook').item.json.body.result.date_year }}\n- HAM SAAT: {{ $('Webhook').item.json.body.result.date_hour }}\n- DAKİKA: {{ $('Webhook').item.json.body.result.date_minute }}\n- ANALİZ İÇERİĞİ: {{ $('AI Agent').item.json.output }}\n\n--- DOLDURMAN GEREKEN ŞABLON ---\n\n=======================================================\n🚨 SOC GÜVENLİK OLAYI ANALİZ RAPORU\n=======================================================\n\nTARİH    : [Buraya Hesapladığın Tarih ve Saati \"GG.AA.YYYY SS:DD\" formatında yaz] (TR Saati)\nANALİST  : AI SOC Agent\nKAYNAK   : Splunk SIEM\nOLAY ID  : SPLUNK-ALERT-{{ $now.format('MMdd-HHmm') }}\n\n-------------------------------------------------------\n1. OLAY ÖZETİ\n-------------------------------------------------------\n[Buraya analizin özetini TÜRKÇE DİL BİLGİSİ KURALLARINA UYGUN olarak yaz.]\n\n-------------------------------------------------------\n2. TEKNİK DETAYLAR & IP İSTİHBARATI\n-------------------------------------------------------\n[Maddeler halinde yaz. Baş harfleri büyük olsun.]\n- Şüpheli IP: ...\n- Risk Durumu: ...\n- Tespit: ...\n\n-------------------------------------------------------\n3. MITRE ATT&CK & SALDIRI TÜRÜ\n-------------------------------------------------------\nSALDIRI TÜRÜ : [Saldırı Adı - BÜYÜK HARF]\nMITRE KODU   : [Txxxx Kodu]\n\nAÇIKLAMA:\n[Tekniği açıkla. Cümle başı büyük olsun.]\n\n-------------------------------------------------------\n4. KRİTİK AKSİYON PLANI (ÖNERİLER)\n-------------------------------------------------------\n[Önerileri maddeler halinde yaz. Cümle başı büyük olsun.]\n- [Eylem 1]\n- [Eylem 2]\n\n=======================================================\nRapor Sonu ",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        592,
+        0
+      ],
+      "id": "a2e7e25b-6ec4-4aab-a3fa-487c54f96246",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        624,
+        208
+      ],
+      "id": "7cebaa3b-7995-4321-9c99-526c197c59c7",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "YOUR_GROQ_CREDENTIAL_ID",
+          "name": "Groq account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "virus_total_scan": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "53e2db22-c73b-46a1-9804-4528d24018bd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_INSTANCE_ID"
+  },
+  "id": "rkfJEYQQ2szT1x6g",
+  "tags": []
+}

@@ -1,0 +1,79 @@
+# 🧠 AI SOC Analyst - Prompt Yapıları
+
+Bu projede kullanılan Büyük Dil Modeli (LLM) promptları aşağıdadır. Bu promptlar, ham log verisini analiz etmek ve yapılandırılmış rapor oluşturmak için tasarlanmıştır.
+
+## 1. Analiz ve Sınıflandırma Promptu (Analist Ajanı)
+**Model:** Google Gemini / OpenAI
+**Görevi:** Log verisini ve VirusTotal sonuçlarını yorumlayıp saldırı türünü belirlemek.
+
+```text
+Log Olayı: {{ $json.body.result.message }}
+Şüpheli IP: {{ $json.body.result.src_ip }}
+
+Sistem Mesajı:
+Sen uzman bir SOC Analistisin. Splunk logunu ve VirusTotal verilerini analiz et.
+Saldırı türünü (MITRE ID ile) belirle ve çözüm önerileri sun.
+Raporu Türkçe olarak, detaylı ve Markdown formatında (başlıklar, maddeler kullanarak) hazırla.
+
+
+2. Rapor Formatlama ve Zaman Düzeltme Promptu (Raporlayıcı Ajan)
+Model: Groq (Llama 3) Görevi: Analiz çıktısını standart bir SOC raporuna dönüştürmek ve zaman dilimini (UTC -> TR) düzeltmek.
+
+GÖREVİN: Aşağıdaki siber güvenlik analizini, verdiğim "Düz Metin Şablonu"na göre yeniden düzenle.
+
+KURALLAR:
+1. HTML veya Markdown YOK. Sadece düz metin.
+2. Yazım Kurallarına Uy: Cümlelere MUTLAKA Büyük Harfle başla.
+3. TARİH HESAPLAMA (ÖNEMLİ):
+   - Sana verdiğim "HAM SAAT" verisine matematiksel olarak 3 EKLE (TR Saati için).
+   - Örnek: Eğer saat 16 ise, rapora 19 yaz. Eğer saat 09 ise 12 yaz.
+   - Dakikayı olduğu gibi kullan.
+
+VERİLER:
+- GÜN/AY/YIL: {{ $('Webhook').item.json.body.result.date_mday }}.{{ $('Webhook').item.json.body.result.date_month }}.{{ $('Webhook').item.json.body.result.date_year }}
+- HAM SAAT: {{ $('Webhook').item.json.body.result.date_hour }}
+- DAKİKA: {{ $('Webhook').item.json.body.result.date_minute }}
+- ANALİZ İÇERİĞİ: {{ $('AI Agent').item.json.output }}
+
+--- DOLDURMAN GEREKEN ŞABLON ---
+
+=======================================================
+🚨 SOC GÜVENLİK OLAYI ANALİZ RAPORU
+=======================================================
+
+TARİH    : [Buraya Hesapladığın Tarih ve Saati "GG.AA.YYYY SS:DD" formatında yaz] (TR Saati)
+ANALİST  : AI SOC Agent
+KAYNAK   : Splunk SIEM
+OLAY ID  : SPLUNK-ALERT-{{ $now.format('MMdd-HHmm') }}
+
+-------------------------------------------------------
+1. OLAY ÖZETİ
+-------------------------------------------------------
+[Buraya analizin özetini TÜRKÇE DİL BİLGİSİ KURALLARINA UYGUN olarak yaz.]
+
+-------------------------------------------------------
+2. TEKNİK DETAYLAR & IP İSTİHBARATI
+-------------------------------------------------------
+[Maddeler halinde yaz. Baş harfleri büyük olsun.]
+- Şüpheli IP: ...
+- Risk Durumu: ...
+- Tespit: ...
+
+-------------------------------------------------------
+3. MITRE ATT&CK & SALDIRI TÜRÜ
+-------------------------------------------------------
+SALDIRI TÜRÜ : [Saldırı Adı - BÜYÜK HARF]
+MITRE KODU   : [Txxxx Kodu]
+
+AÇIKLAMA:
+[Tekniği açıkla. Cümle başı büyük olsun.]
+
+-------------------------------------------------------
+4. KRİTİK AKSİYON PLANI (ÖNERİLER)
+-------------------------------------------------------
+[Önerileri maddeler halinde yaz. Cümle başı büyük olsun.]
+- [Eylem 1]
+- [Eylem 2]
+
+=======================================================
+Rapor Sonu 
