@@ -2,7 +2,7 @@
 
 Bu proje, **Splunk SIEM**'den gelen güvenlik alarmlarını **Yapay Zeka (Llama 3 / Gemini)** ve **Tehdit İstihbaratı (VirusTotal)** servislerini kullanarak otomatik analiz eden ve raporlayan bir **n8n** otomasyonudur.
 
-![Workflow Görünümü](workflow.png)
+![Workflow Görünümü](workflow-diagram.png)
 
 ## 🚀 Projenin Amacı
 Geleneksel SOC süreçlerinde analistler binlerce logu manuel inceler. Bu otomasyon şunları yapar:
@@ -16,7 +16,7 @@ Geleneksel SOC süreçlerinde analistler binlerce logu manuel inceler. Bu otomas
 
 Sistem, analiste aşağıdaki formatta otomatik bir rapor üretir:
 
-![Rapor Örneği](report-sample.png)
+![Rapor Örneği](sample-report.png)
 
 ## 🛠️ Kurulum ve Kullanım
 
