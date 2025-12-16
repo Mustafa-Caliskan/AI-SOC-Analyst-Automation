@@ -11,6 +11,8 @@ This project is an intelligent security automation workflow designed to combat *
 
 ![Workflow Diagram](workflow-diagram.png)
 
+---
+
 ## 🚀 Key Features
 
 * **⚡ Real-time Event Capture:** Listens for HTTP Webhooks triggered by **Splunk** alerts.
@@ -20,6 +22,8 @@ This project is an intelligent security automation workflow designed to combat *
     * **Editor Engine (Llama 3 via Groq):** Formats the analysis into a standardized report and handles logic tasks like **Timezone Conversion (UTC to Local Time)**.
 * **📝 Automated Reporting:** Sends a clean, action-oriented email report to the security team, ready for review.
 
+---
+
 ## ⚙️ Architecture & Workflow
 
 1.  **Trigger:** Splunk detects a suspicious pattern (e.g., SQLi attempt) and sends a JSON payload via Webhook.
@@ -28,11 +32,15 @@ This project is an intelligent security automation workflow designed to combat *
 4.  **Refine:** The analysis is passed to **Llama 3 (Groq)** to format the text and calculate the correct local time (e.g., `UTC +3`).
 5.  **Act:** An HTML/Text email is sent via SMTP containing the final report.
 
+---
+
 ## 📊 Sample Report Output
 
 The system generates a human-readable report without any manual intervention:
 
 ![Sample Report](sample-report.png)
+
+---
 
 ## 🛠️ Splunk Configuration
 
@@ -43,3 +51,69 @@ index=web_logs sourcetype=access_combined
 | regex uri_query="(?i)(union\s+select|select\s+.*\s+from|insert\s+into|update\s+.*\s+set|OR\s+1=1)"
 | stats count by src_ip, uri_query, user_agent, _time
 | rename uri_query as message
+```
+
+**Trigger Action:** Select **Webhook** and paste your n8n production URL.
+
+---
+
+## 🔧 Installation & Setup
+
+### Prerequisites
+
+* **n8n** (Self-hosted or Cloud)
+* **Splunk** Enterprise / Cloud
+* **API Keys** for:
+    * Google Gemini (PaLM)
+    * Groq (for Llama 3)
+    * VirusTotal
+* **SMTP** (Gmail or other provider)
+
+### Steps
+
+1. **Clone/Download:** Download the `AI-SOC-Analyst-Automation.json` file from this repository.
+2. **Import:** Open your n8n dashboard, go to **Workflows > Import from File**, and select the JSON file.
+3. **Credentials:** Double-click on the nodes to configure your credentials:
+    * **VirusTotal** → Header Auth
+    * **Google Gemini** → Google PaLM API
+    * **Groq** → Groq API
+    * **Send Email** → SMTP Credentials
+4. **Activate:** Toggle the **Active** switch in n8n.
+5. **Test:** Trigger a test alert from Splunk or send a mock JSON to the Webhook URL.
+
+---
+
+## 📂 Project Structure
+
+```
+├── AI-SOC-Analyst-Automation.json    # n8n workflow file
+├── workflow-diagram.png               # Architecture diagram
+├── sample-report.png                  # Example output report
+└── README.md                          # This file
+```
+
+---
+
+## 🎯 Use Cases
+
+* **Alert Triage:** Automatically classify and prioritize security alerts.
+* **Threat Hunting:** Enrich indicators with external intelligence sources.
+* **Compliance Reporting:** Generate audit-ready incident reports.
+* **Training:** Demonstrate AI-driven automation in cybersecurity education.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a **Pull Request** or open an **Issue** for suggestions and improvements.
+
+---
+
+## 📜 License
+
+This project is open-source and available under the **MIT License**.
+
+---
+
+**Developed to demonstrate the power of Low-Code Automation and Generative AI in Cybersecurity.**
+
